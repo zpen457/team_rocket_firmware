@@ -59,7 +59,11 @@
 // P1.1_UCB0CLK_ACLK_OA0A_COMP0.1_A1 ---> SWITCH output signal (to nichrome heating)
 // P5.2_TB2CLK_A10 ---> ADC input signal (from thermistor)
 //
-// will probably use repeated-single-channel mode for ADC
+// Description: will probably use repeated-single-channel mode for ADC. A10 is sampled
+// [at a certain frequency] with reference to [1.5V? sounds reasonable for our voltage input which
+// is < 3.3V]. [A certain timer] will be used to automatically trigger ADC conversion. 
+// Inside ADC_ISR if A10 < [targetTemp], P1.1 is set, else cleared. 
+//
 // ******************************************************************************
 
 #include <msp430.h>
