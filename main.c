@@ -60,8 +60,8 @@
 // P5.2_TB2CLK_A10 ---> ADC input signal (from thermistor)
 //
 // Description: will probably use repeated-single-channel mode for ADC. A10 is sampled
-// [at a certain frequency] with reference to [1.5V? sounds reasonable for our voltage input which
-// is < 3.3V]. [A certain timer] will be used to automatically trigger ADC conversion. 
+// [at a certain frequency] with reference to [what is a reasonable ref for our voltage input?]. 
+// [A certain timer] will be used to automatically trigger ADC conversion. 
 // Inside ADC_ISR if A10 < [targetTemp], P1.1 is set, else cleared. 
 //
 // ******************************************************************************
