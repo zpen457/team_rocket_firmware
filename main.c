@@ -30,139 +30,122 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * --/COPYRIGHT--*/
 //*****************************************************************************
-//         GUI Composer Simple JSON Demo using MSP430
+//  MSP430FR235x Demo - ADC, Sample A1, internal 1.5V Ref, TB1.1 Trig, Set P1.2 if A1>0.5V
 //
-// Texas Instruments, Inc.
+//  Description: This example works on Repeat-Single-Channel Mode.
+//  A1 is sampled 16/second (ACLK/1024) with reference to 1.5V.
+//  Timer_B is run in upmode and TB1.1B is used to automatically trigger
+//  ADC conversion. Internal oscillator times sample (16x) and conversion(13x).
+//  Inside ADC_ISR if A1 > 0.5V, P1.2 is set, else reset. Normal mode is LPM3.
+//  ACLK = XT1 = 32768Hz, MCLK = SMCLK = default DCODIV ~1MHz.
+//  //* An external watch crystal on XIN XOUT is required for ACLK *//
+//
+//                MSP430FR2355
+//             -----------------
+//         /|\|                 |
+//          | |                 |
+//          --|RST              |
+//            |                 |
+//        >---|P1.1/A1      P1.2|--> LED
+//
+//
+//   Cash Hao
+//   Texas Instruments Inc.
+//   November 2016
+//   Built with IAR Embedded Workbench v6.50.0 & Code Composer Studio v6.2.0
+//******************************************************************************
+//         Team Rocket Firmware
+//
+// 
 // ******************************************************************************
 
 #include <msp430.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <HAL.h>
-#include <GUI_JSON.h>
-#include <GUIComm.h>
-#include <QmathLib.h>
-#include <callbacks_JSON.h>
 
-// Q8 is used in this demo because the variable qCounter ranges 0.0-100.0
-
-#define STR_LEN_TWO 2
-#define STR_LEN_SEVEN 7
-
-// Global variable use to track the of state of GUI and counter values
-volatile uint8_t u8Counter;
-volatile uint16_t u16Counter;
-volatile uint32_t u32Counter;
-volatile _q qCounter;
-volatile bool bUpdateGUI;
-
-//! \brief RX Command structure.
-//!         The corresponding callback will be called when the command is
-//!         received from GUI.
-//! Note: shorter command names take less time to process
-const tGUI_RxCmd GUI_RXCommands[] =
+int main(void)
 {
-     {"bEnable",    GUICallback_boolEnable},
-     {"u16Data",    GUICallback_QMathData},
-};
+    WDTCTL = WDTPW | WDTHOLD;                                 // Stop WDT
 
-//! \brief Increments counters using MSP430 and sends data to GUI.
-//!
-//! \return none
-void main(void)
-{
-    WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
+    // Configure GPIO
+    P1DIR |= BIT2;                                            // Set P1.2 to output direction
+    P1OUT &= ~BIT2;                                           // Clear P1.2
 
-    // Initialize clock, GPIOs
-    HAL_System_Init();
+    // Configure ADC A1 pin
+    P1SEL0 |= BIT1;
+    P1SEL1 |= BIT1;
 
-    // Initialize GUI layer
-    GUI_Init();
-    GUI_InitRxCmd( &GUI_RXCommands[0],
-                  (sizeof(GUI_RXCommands)/sizeof(GUI_RXCommands[0])) );
+    // Configure XT1 oscillator
+    P2SEL1 |= BIT6 | BIT7;                                    // P2.6~P2.7: crystal pins
 
-    // Initialize variables
-    bUpdateGUI = false;              // Update GUI first time
-    u8Counter = 50;  // Counter8 will be updated on SW1 press in increments of 50
-    u16Counter = 5000; // Counter16 will be updated on button press in increments of 5000
-    u32Counter = 10000; // Counter32 will be updated on timer in increments of 10000
-    bEnableSwitch = true;           // Switch enables updating QMath
-    qCounter = _Q(0.5); // QMath counter updated on timer based on boolean in increments of qIncrement
-    qIncrement = _Q(0.5);
+    // Disable the GPIO power-on default high-impedance mode to activate
+    // previously configured port settings
+    PM5CTL0 &= ~LOCKLPM5;
 
-    // Configure SW1 and SW2 for interrupts (pins set as input with pull-up during GPIO initialization)
-    HAL_IO_InitButtons();
-
-    // Initialize a timer to update the counter
-    HAL_Timer_Init();
-
-    // Send default value of variables
-    GUIComm_sendUInt8("c1", STR_LEN_TWO, u8Counter);
-    GUIComm_sendUInt16("c2", STR_LEN_TWO, u16Counter);
-    GUIComm_sendUInt32("c3", STR_LEN_TWO, u32Counter);
-    GUIComm_sendInt16("c4", STR_LEN_TWO, (int16_t) qCounter);
-    GUIComm_sendInt16("u16Data", STR_LEN_SEVEN, (int16_t) qIncrement);
-    GUIComm_sendBool("bEnable", STR_LEN_SEVEN, bEnableSwitch);
-
-    __bis_SR_register(LPM3_bits | GIE); // Enter LPM3 w/interrupt
-    __enable_interrupt();
-
-    while (1)
+    CSCTL4 = SELA__XT1CLK;                                    // Set ACLK = XT1; MCLK = SMCLK = DCO
+    do
     {
-         while (bUpdateGUI == true)
-         {
-             GUIComm_sendUInt8("c1", STR_LEN_TWO, u8Counter);
-             GUIComm_sendUInt16("c2", STR_LEN_TWO, u16Counter);
-             GUIComm_sendUInt32("c3", STR_LEN_TWO, u32Counter);
-             if (bEnableSwitch == true)
-             {
-                GUIComm_sendInt16("c4", STR_LEN_TWO, (int16_t) qCounter);
-             }
+        CSCTL7 &= ~(XT1OFFG | DCOFFG);                        // Clear XT1 and DCO fault flag
+        SFRIFG1 &= ~OFIFG;
+    }while (SFRIFG1 & OFIFG);                                 // Test oscillator fault flag
 
-            bUpdateGUI = false;
-         }
+    // Configure ADC
+    ADCCTL0 |= ADCON | ADCMSC;                                // ADCON
+    ADCCTL1 |= ADCSHP | ADCSHS_2 | ADCCONSEQ_2;                        // repeat single channel; TB1.1 trig sample start
+    ADCCTL2 &= ~ADCRES;                                       // clear ADCRES in ADCCTL
+    ADCCTL2 |= ADCRES_2;                                      // 12-bit conversion results
+    ADCMCTL0 |= ADCINCH_1 | ADCSREF_1;                        // A1 ADC input select; Vref=1.5V
+    ADCIE |= ADCIE0;                                          // Enable ADC conv complete interrupt
 
-         __disable_interrupt();
-         if (bUpdateGUI == false)
-         {
-            __bis_SR_register(LPM3_bits | GIE); // Enter LPM3 w/interrupt
-            __no_operation();                   // For debug
-         }
+    // Configure reference
+    PMMCTL0_H = PMMPW_H;                                      // Unlock the PMM registers
+    PMMCTL2 |= INTREFEN | REFVSEL_0;                          // Enable internal 1.5V reference
+    __delay_cycles(400);                                      // Delay for reference settling
+
+    ADCCTL0 |= ADCENC;                                        // ADC Enable
+
+
+    // ADC conversion trigger signal - TimerB1.1 (32ms ON-period)
+    TB1CCR0 = 1024-1;                                         // PWM Period
+    TB1CCR1 = 512-1;                                          // TB1.1 ADC trigger
+    TB1CCTL1 = OUTMOD_4;                                      // TB1CCR0 toggle
+    TB1CTL = TBSSEL__ACLK | MC_1 | TBCLR;                     // ACLK, up mode
+
+    __bis_SR_register(LPM0_bits | GIE);                       // Enter LPM3 w/ interrupts
+}
+
+// ADC interrupt service routine
+#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
+#pragma vector=ADC_VECTOR
+__interrupt void ADC_ISR(void)
+#elif defined(__GNUC__)
+void __attribute__ ((interrupt(ADC_VECTOR))) ADC_ISR (void)
+#else
+#error Compiler not supported!
+#endif
+{
+    switch(__even_in_range(ADCIV,ADCIV_ADCIFG))
+    {
+        case ADCIV_NONE:
+            break;
+        case ADCIV_ADCOVIFG:
+            break;
+        case ADCIV_ADCTOVIFG:
+            break;
+        case ADCIV_ADCHIIFG:
+            break;
+        case ADCIV_ADCLOIFG:
+            break;
+        case ADCIV_ADCINIFG:
+            break;
+        case ADCIV_ADCIFG:
+            if (ADCMEM0 < 0x555)                             // ADCMEM = A0 < 0.5V?
+                P1OUT &= ~BIT2;                              // Clear P1.2 LED off
+            else
+                P1OUT |= BIT2;                               // Set P1.2 LED on
+            ADCIFG = 0;
+            break;                                           // Clear CPUOFF bit from 0(SR)
+        default:
+            break;
     }
 }
-
-//! \brief Function called by HAL when there is a periodic timer interrupt
-//!
-//! \return none
-void TimerCallback(void)
-{
-    // Update 32-bit counter
-    u32Counter += 10000;
-    bUpdateGUI = true;
-    if (bEnableSwitch == true)
-    {
-        qCounter += qIncrement;
-
-        if (qCounter > _Q(100.0))
-        {
-            qCounter = 0;
-        }
-    }
-}
-
-//! \brief Function called by HAL when SW1 is pressed
-//!
-//! \return none
-void ButtonCallback_SW1(void)
-{
-    u8Counter += 50;
-}
-
-//! \brief Function called by HAL when SW2 is pressed
-//!
-//! \return none
-void ButtonCallback_SW2(void)
-{
-    u16Counter += 5000;
-}
-
