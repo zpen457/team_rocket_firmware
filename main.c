@@ -56,7 +56,10 @@
 //******************************************************************************
 //         Team Rocket Firmware
 //
-// 
+// P1.1_UCB0CLK_ACLK_OA0A_COMP0.1_A1 ---> SWITCH output signal (to nichrome heating)
+// P5.2_TB2CLK_A10 ---> ADC input signal (from thermistor)
+//
+// will probably use repeated-single-channel mode for ADC
 // ******************************************************************************
 
 #include <msp430.h>
