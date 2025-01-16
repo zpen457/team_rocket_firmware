@@ -1,0 +1,47 @@
+[
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/GUIComm_JSON.c"
+   },
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/callbacks_JSON.c"
+   },
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/main.c"
+   },
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/src/MSP430_GUI/GUI_JSON.c"
+   },
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/src/MSP430_GUI/jsmn/jsmn.c"
+   },
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/src/MSP430_HAL/HAL_GUIComm_UART_FR235x.c"
+   },
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/src/MSP430_HAL/HAL_IO_FR235x.c"
+   },
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/src/MSP430_HAL/HAL_System_FR235x.c"
+   },
+   {
+      "directory" : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/Debug",
+      "command"   : "clang++ -I\"C:/ti/ccs/ccs_base/msp430/include\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware\" -I\"C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/include\" -I\"C:/ti/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include\" -D__MSP430FR2355__ -D_FRWP_ENABLE -D_INFO_FRWP_ENABLE -D__ENABLE_GUI_COMM=1 -DGLOBAL_Q=8",
+      "file"      : "C:/Users/angpe/workspace_ccstheia/team_rocket_firmware/src/MSP430_HAL/HAL_Timer_FR235x.c"
+   }
+]
