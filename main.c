@@ -60,11 +60,26 @@
 // P5.2_TB2CLK_A10 ---> ADC input signal (from thermistor)
 //
 // Description: will probably use repeated-single-channel mode for ADC. A10 is sampled
-// [at a certain frequency] with reference to [what is a reasonable ref for our voltage input?]. 
-// [A certain timer] will be used to automatically trigger ADC conversion. 
+// [at a certain frequency, maybe lowest possible to save energy?] with reference to 2.5V
+// [our voltage input range is 0V~2.5V]. 
+// [also need to decide on 10-bit or 12-bit conversion, 10 bit should be enough]
 // Inside ADC_ISR if A10 < [targetTemp], P1.1 is set, else cleared. 
+// [need to also select an ADC clock source: use auxiliary clock ACLK (suitable for low frequency)]
+// deep sleep mode 
 //
 // ******************************************************************************
+//
+// pseudo code:
+// 1. stop WDT
+// 2. configure GPIO: set P1.1 to output direction, clear P1.1; set P5.2 to input direction
+// 3. configure ADC A10 pin
+// 4. configure XT1CLK oscillator
+// 5. disable the GPIO power-on default high-impedance mode to activate previously configured port settings
+// 6. set ACLK = XT1
+// 7. configure ADC: ADCON, repeat single channel, 10 bit resolution, A10 ADC input select, Vref = 2.5V, enable ADC conv complete interrupt
+// 8. configure reference: unlock PMM registers, enable 2.5V internal reference, delay for reference setting, ADC enable
+// 9. ADC ISR: if ADCMEM0 < TARGET set P1.1 else clear P1.1
+
 
 #include <msp430.h>
 #include <stdbool.h>
@@ -98,7 +113,7 @@ int main(void)
 
     // Configure ADC
     ADCCTL0 |= ADCON | ADCMSC;                                // ADCON
-    ADCCTL1 |= ADCSHP | ADCSHS_2 | ADCCONSEQ_2;                        // repeat single channel; TB1.1 trig sample start
+    ADCCTL1 |= ADCSHP | ADCSHS_2 | ADCCONSEQ_2;               // repeat single channel; TB1.1 trig sample start
     ADCCTL2 &= ~ADCRES;                                       // clear ADCRES in ADCCTL
     ADCCTL2 |= ADCRES_2;                                      // 12-bit conversion results
     ADCMCTL0 |= ADCINCH_1 | ADCSREF_1;                        // A1 ADC input select; Vref=1.5V
