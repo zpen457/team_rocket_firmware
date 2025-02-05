@@ -62,7 +62,7 @@
 // Description: will probably use repeated-single-channel mode for ADC. A10 is sampled
 // [at a certain frequency, maybe lowest possible to save energy?] with reference to 2.5V
 // [our voltage input range is 0V~2.5V]. 
-// [also need to decide on 10-bit or 12-bit conversion, 10 bit should be enough]
+// [12-bit conversion]
 // Inside ADC_ISR if A10 < [targetTemp], P1.1 is set, else cleared. 
 // [need to also select an ADC clock source: use auxiliary clock ACLK (suitable for low frequency)]
 // deep sleep mode 
@@ -70,13 +70,13 @@
 // ******************************************************************************
 //
 // pseudo code:
-// 1. stop WDT
-// 2. configure GPIO: set P1.1 to output direction, clear P1.1; set P5.2 to input direction
+// 1. stop WDT (done)
+// 2. configure GPIO: set P1.1 to output direction, clear P1.1 (done); set P5.2 to input direction
 // 3. configure ADC A10 pin
 // 4. configure XT1CLK oscillator
 // 5. disable the GPIO power-on default high-impedance mode to activate previously configured port settings
 // 6. set ACLK = XT1
-// 7. configure ADC: ADCON, repeat single channel, 10 bit resolution, A10 ADC input select, Vref = 2.5V, enable ADC conv complete interrupt
+// 7. configure ADC: ADCON, repeat single channel, 12 bit resolution, A10 ADC input select, Vref = 2.5V, enable ADC conv complete interrupt
 // 8. configure reference: unlock PMM registers, enable 2.5V internal reference, delay for reference setting, ADC enable
 // 9. ADC ISR: if ADCMEM0 < TARGET set P1.1 else clear P1.1
 
@@ -85,17 +85,25 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// #define TARGET // find out voltage at 50 deg celcius
+
+uint16_t currentTemp; // declare variable for current temperature
+
 int main(void)
 {
     WDTCTL = WDTPW | WDTHOLD;                                 // Stop WDT
 
     // Configure GPIO
-    P1DIR |= BIT2;                                            // Set P1.2 to output direction
-    P1OUT &= ~BIT2;                                           // Clear P1.2
+    P1DIR |= BIT1;                                            // Set P1.1 to output direction
+    P1OUT &= ~BIT1;                                           // Clear P1.1
 
     // Configure ADC A1 pin
-    P1SEL0 |= BIT1;
-    P1SEL1 |= BIT1;
+    // P1SEL0 |= BIT1;
+    // P1SEL1 |= BIT1;
+    
+    // configure ADC A10 pin (P5.2)
+    P5SEL0 |= BIT2;
+    P5SEL1 |= BIT2;
 
     // Configure XT1 oscillator
     P2SEL1 |= BIT6 | BIT7;                                    // P2.6~P2.7: crystal pins
@@ -127,6 +135,7 @@ int main(void)
     ADCCTL0 |= ADCENC;                                        // ADC Enable
 
 
+    // can get rid of this following part
     // ADC conversion trigger signal - TimerB1.1 (32ms ON-period)
     TB1CCR0 = 1024-1;                                         // PWM Period
     TB1CCR1 = 512-1;                                          // TB1.1 ADC trigger
