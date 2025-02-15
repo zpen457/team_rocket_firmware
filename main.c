@@ -71,78 +71,90 @@
 //
 // pseudo code:
 // 1. stop WDT (done)
-// 2. configure GPIO: set P1.1 to output direction, clear P1.1 (done); set P5.2 to input direction
-// 3. configure ADC A10 pin
-// 4. configure XT1CLK oscillator
-// 5. disable the GPIO power-on default high-impedance mode to activate previously configured port settings
-// 6. set ACLK = XT1
+// 2. configure GPIO: set P1.1 to output direction, clear P1.1; set P5.2 to input direction (done)
+// 3. configure ADC A10 pin (done)
+// 4. configure VLO oscillator (the XT1CLK oscillator requires external capacitors so not ideal) (done)
+// 5. disable the GPIO power-on default high-impedance mode to activate previously configured port settings (done)
+// 6. 
 // 7. configure ADC: ADCON, repeat single channel, 12 bit resolution, A10 ADC input select, Vref = 2.5V, enable ADC conv complete interrupt
 // 8. configure reference: unlock PMM registers, enable 2.5V internal reference, delay for reference setting, ADC enable
 // 9. ADC ISR: if ADCMEM0 < TARGET set P1.1 else clear P1.1
 
 
+#include "msp430fr2355.h"
 #include <msp430.h>
-#include <stdbool.h>
-#include <stdint.h>
+// #include <stdint.h>
 
-// #define TARGET // find out voltage at 50 deg celcius
+#define TARGET 0x555; // placeholder value for now: need to find out voltage at 50 deg celcius
 
-uint16_t currentTemp; // declare variable for current temperature
+// uint16_t currentTemp; // declare variable for current temperature
 
 int main(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;                                 // Stop WDT
+    // 1. Stop WDT
+    WDTCTL = WDTPW | WDTHOLD;
 
-    // Configure GPIO
-    P1DIR |= BIT1;                                            // Set P1.1 to output direction
-    P1OUT &= ~BIT1;                                           // Clear P1.1
-
-    // Configure ADC A1 pin
-    // P1SEL0 |= BIT1;
-    // P1SEL1 |= BIT1;
+    // 2. Configure GPIO
+    P1DIR |= BIT1;                                             // Set P1.1 to output direction
+    P1OUT |= BIT1;                                             // Set P1.1 high initially
+    P5DIR &= ~BIT2;                                            // set P5.2 as input
     
-    // configure ADC A10 pin (P5.2)
+    // 3. Configure ADC A10 pin (P5.2)
     P5SEL0 |= BIT2;
     P5SEL1 |= BIT2;
 
-    // Configure XT1 oscillator
-    P2SEL1 |= BIT6 | BIT7;                                    // P2.6~P2.7: crystal pins
+    // 4. Configure VLO oscillator
+    CSCTL4 = SELA__VLOCLK;                                    // select VLO for ACLK
+    CSCTL5 &= ~VLOAUTOOFF;                                    // turn on VLO
 
-    // Disable the GPIO power-on default high-impedance mode to activate
-    // previously configured port settings
+    // 5. Disable the GPIO power-on default high-impedance mode to activate previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
 
-    CSCTL4 = SELA__XT1CLK;                                    // Set ACLK = XT1; MCLK = SMCLK = DCO
-    do
-    {
-        CSCTL7 &= ~(XT1OFFG | DCOFFG);                        // Clear XT1 and DCO fault flag
-        SFRIFG1 &= ~OFIFG;
-    }while (SFRIFG1 & OFIFG);                                 // Test oscillator fault flag
+    // 6. Configure ADC
+    ADCCTL0 &= ~ADCSHT;                                       // set conv clock cycles to 16 (2)
+    ADCCTL0 |= ADCSHT_2; 
+    ADCCTL0 |= ADCON | ADCMSC;                                // turn on ADC and multiple-sample-conversion
+    
+    ADCCTL1 &= ~ADCSHP;                                       // sample signal source = input signal 
+    ADCCTL1 &= ~ADCSHS;                                       // ADC conv by software-controlled ADCSC bit
+    ADCCTL1 &= ~ADCSSEL;                                      // chooses ACLK (1)
+    ADCCTL1 |= ADCSSEL_1; 
+    ADCCTL1 |= ADCCONSEQ_2;                                   // chooses repeat-single-channel (2)
+    
+    ADCCTL2 &= ~ADCRES;                                       // clear resolution
+    ADCCTL2 |= ADCRES_2;                                      // 12 bit resolution (2)
+    
+    ADCMCTL0 |= ADCINCH_10 | ADCSREF_1;                       // selects input channel A10 (P5.2); Vref = 2.5V
 
-    // Configure ADC
+    ADCIE |= ADCIE0;                                          // Enable ADC conv complete interrupt
+
+    /*
     ADCCTL0 |= ADCON | ADCMSC;                                // ADCON
     ADCCTL1 |= ADCSHP | ADCSHS_2 | ADCCONSEQ_2;               // repeat single channel; TB1.1 trig sample start
     ADCCTL2 &= ~ADCRES;                                       // clear ADCRES in ADCCTL
     ADCCTL2 |= ADCRES_2;                                      // 12-bit conversion results
     ADCMCTL0 |= ADCINCH_1 | ADCSREF_1;                        // A1 ADC input select; Vref=1.5V
-    ADCIE |= ADCIE0;                                          // Enable ADC conv complete interrupt
+    ADCIE |= ADCIE0;                                          
+    */
 
-    // Configure reference
-    PMMCTL0_H = PMMPW_H;                                      // Unlock the PMM registers
-    PMMCTL2 |= INTREFEN | REFVSEL_0;                          // Enable internal 1.5V reference
-    __delay_cycles(400);                                      // Delay for reference settling
+    // 7. Configure reference
+    PMMCTL0_H = PMMPW_H; // Unlock the PMM registers
+    PMMCTL2 |= INTREFEN | REFVSEL_2; // Enable internal 2.5V reference
 
-    ADCCTL0 |= ADCENC;                                        // ADC Enable
+    ADCCTL0 |= ADCENC | ADCSC;                                        // ADC Enable and start conv
 
-
+/*
     // can get rid of this following part
     // ADC conversion trigger signal - TimerB1.1 (32ms ON-period)
     TB1CCR0 = 1024-1;                                         // PWM Period
     TB1CCR1 = 512-1;                                          // TB1.1 ADC trigger
     TB1CCTL1 = OUTMOD_4;                                      // TB1CCR0 toggle
     TB1CTL = TBSSEL__ACLK | MC_1 | TBCLR;                     // ACLK, up mode
+*/
 
-    __bis_SR_register(LPM0_bits | GIE);                       // Enter LPM3 w/ interrupts
+    while (1) {
+        __bis_SR_register(LPM0_bits | GIE);                       // Enter LPM3 w/ interrupts
+    }
 }
 
 // ADC interrupt service routine
@@ -170,13 +182,14 @@ void __attribute__ ((interrupt(ADC_VECTOR))) ADC_ISR (void)
         case ADCIV_ADCINIFG:
             break;
         case ADCIV_ADCIFG:
-            if (ADCMEM0 < 0x555)                             // ADCMEM = A0 < 0.5V?
-                P1OUT &= ~BIT2;                              // Clear P1.2 LED off
-            else
-                P1OUT |= BIT2;                               // Set P1.2 LED on
+            if (ADCMEM0 > 0x555)                            // ADCMEM = A10 > 0.5V?
+                P1OUT &= ~BIT1;                              // stop P1.1 output                          
+            else 
+                P1OUT |= BIT1;                               // Set P1.1 high
             ADCIFG = 0;
             break;                                           // Clear CPUOFF bit from 0(SR)
         default:
             break;
     }
 }
+
