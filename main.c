@@ -85,8 +85,6 @@
 #include <msp430.h>
 // #include <stdint.h>
 
-#define TARGET 0x555; // placeholder value for now: need to find out voltage at 50 deg celcius
-
 // uint16_t currentTemp; // declare variable for current temperature
 
 int main(void)
@@ -106,6 +104,14 @@ int main(void)
     // 4. Configure VLO oscillator
     CSCTL4 = SELA__VLOCLK;                                    // select VLO for ACLK
     CSCTL5 &= ~VLOAUTOOFF;                                    // turn on VLO
+
+    // 4.1 Enter 30 minute time delay
+    RTCCTL = RTCSS__VLOCLK | RTCSR | RTCPS__1000; // RTC = VLOCLK, RTCSR, RTCPS = /1000, 
+    RTCMOD = 0x4650; // ~10 kHz /1000 /4650 =  18000 sec per cycle
+    RTCCTL |= RTCIE; // Enable RTC interrupt
+
+    // Enter LPM3 and wait for 30 minutes
+    __bis_SR_register(LPM3_bits | GIE);
 
     // 5. Disable the GPIO power-on default high-impedance mode to activate previously configured port settings
     PM5CTL0 &= ~LOCKLPM5;
@@ -153,7 +159,7 @@ int main(void)
 */
 
     while (1) {
-        __bis_SR_register(LPM0_bits | GIE);                       // Enter LPM3 w/ interrupts
+        __bis_SR_register(LPM3_bits | GIE);                       // Enter LPM3 w/ interrupts
     }
 }
 
@@ -182,7 +188,7 @@ void __attribute__ ((interrupt(ADC_VECTOR))) ADC_ISR (void)
         case ADCIV_ADCINIFG:
             break;
         case ADCIV_ADCIFG:
-            if (ADCMEM0 > 0x555)                            // ADCMEM = A10 > 0.5V?
+            if (ADCMEM0 < 0xA3D)                            // ADCMEM = A10 < 1.6V?
                 P1OUT &= ~BIT1;                              // stop P1.1 output                          
             else 
                 P1OUT |= BIT1;                               // Set P1.1 high
@@ -193,3 +199,9 @@ void __attribute__ ((interrupt(ADC_VECTOR))) ADC_ISR (void)
     }
 }
 
+// RTC ISR - triggers after 30 mins
+#pragma vector = RTC_VECTOR
+__interrupt void RTC_ISR(void) {
+    RTCCTL &= ~RTCIE;  // Disable RTC interrupt
+    __bic_SR_register_on_exit(LPM3_bits);  // Exit LPM3
+}
